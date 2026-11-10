@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus | Premium Comms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Premium Custom Scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+        
+        /* Smooth transitions */
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-[#0a0a0a] text-gray-200 h-screen overflow-hidden antialiased font-sans selection:bg-[#8c5226] selection:text-white">
+
+    <!-- ================= AUTHENTICATION SCREEN ================= -->
+    <div id="authScreen" class="h-full flex items-center justify-center bg-[#0a0a0a]">
+        <div class="w-full max-w-sm p-8 bg-[#141414] border border-[#2a2a2a] rounded-2xl shadow-2xl relative overflow-hidden">
+            <!-- Decorative Glow -->
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-[#8c5226] rounded-full blur-[70px] opacity-20"></div>
+            
+            <div class="text-center mb-8 relative z-10">
+                <h1 class="text-3xl font-bold text-[#d4a373] tracking-widest">NEXUS</h1>
+                <p id="authSubtitle" class="text-[10px] text-gray-500 mt-2 uppercase tracking-[0.3em]">Authenticate Session</p>
+            </div>
+            
+            <form id="authForm" onsubmit="handleAuth(event)" class="space-y-5 relative z-10">
+                <div>
+                    <label class="block text-[10px] text-gray-400 uppercase tracking-widest mb-2 ml-1">Identifier</label>
+                    <input type="text" id="username" required class="w-full bg-[#0f0f0f] border border-[#333] rounded-xl px-4 py-3 focus:outline-none focus:border-[#8c5226] transition-colors text-sm text-gray-200 placeholder-gray-700" placeholder="Enter username">
+                </div>
+                <div>
+                    <label class="block text-[10px] text-gray-400 uppercase tracking-widest mb-2 ml-1">Passphrase</label>
+                    <input type="password" id="password" required class="w-full bg-[#0f0f0f] border border-[#333] rounded-xl px-4 py-3 focus:outline-none focus:border-[#8c5226] transition-colors text-sm text-gray-200 placeholder-gray-700" placeholder="••••••••">
+                </div>
+                <button type="submit" id="authBtn" class="w-full bg-gradient-to-r from-[#8c5226] to-[#6b3e1c] hover:from-[#9e5d2c] hover:to-[#7a4721] text-white font-semibold py-3 rounded-xl shadow-[0_0_15px_rgba(140,82,38,0.15)] transition-all uppercase tracking-wider text-xs mt-2">
+                    Access Terminal
+                </button>
+                <p id="authError" class="text-red-400 text-xs text-center hidden mt-2"></p>
+                
+                <div class="text-center mt-6">
+                    <p class="text-xs text-gray-500">
+                        <span id="authToggleText">No clearance?</span> 
+                        <a href="#" onclick="toggleAuthMode()" id="authToggleLink" class="text-[#d4a373] hover:text-white transition-colors ml-1 border-b border-[#d4a373]/30 border-dashed">Request Access</a>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MAIN APP (WHATSAPP STYLE) ================= -->
+    <div id="appScreen" class="h-full w-full flex hidden">
+        
+        <!-- SIDEBAR (Room List & Profile) -->
+        <div class="w-full md:w-[350px] lg:w-[400px] h-full bg-[#121212] border-r border-[#262626] flex flex-col flex-shrink-0">
+            
+            <!-- Sidebar Header (Profile) -->
+            <div class="p-5 bg-[#181818] border-b border-[#262626] flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-[#8c5226] to-[#d4a373] flex items-center justify-center text-white font-bold shadow-lg">
+                        <span id="userInitial">U</span>
+                    </div>
+                    <div>
+                        <p id="profileName" class="text-sm font-semibold text-gray-200">User</p>
+                        <p class="text-[10px] text-green-500/80 tracking-widest uppercase">Secure Link Active</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="text-gray-500 hover:text-red-400 transition-colors" title="Terminate Session">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                </button>
+            </div>
+
+            <!-- Room Tools -->
+            <div class="p-4 border-b border-[#262626] flex gap-2">
+                <button onclick="createNewRoom()" class="flex-1 bg-[#1e1e1e] hover:bg-[#2a2a2a] text-[#d4a373] text-xs py-2.5 rounded-lg border border-[#333] transition-all flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Create Room
+                </button>
+                <button onclick="joinRoomPrompt()" class="flex-1 bg-[#1e1e1e] hover:bg-[#2a2a2a] text-gray-400 hover:text-white text-xs py-2.5 rounded-lg border border-[#333] transition-all flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg> Join via ID
+                </button>
+            </div>
+
+            <!-- Room List -->
+            <div id="roomListContainer" class="flex-1 overflow-y-auto p-2 space-y-1">
+                <!-- Rooms will be populated here -->
+            </div>
+        </div>
+
+        <!-- CHAT ARENA (Main Content) -->
+        <div class="flex-1 h-full flex flex-col bg-[#0a0a0a] relative">
+            
+            <!-- Empty State (Before selecting a room) -->
+            <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center z-20 bg-[#0a0a0a]">
+                <div class="w-24 h-24 mb-6 opacity-20">
+                    <svg fill="none" stroke="#d4a373" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"></path></svg>
+                </div>
+                <h2 class="text-xl text-gray-500 font-light tracking-wide">Nexus Secure Protocol</h2>
+                <p class="text-xs text-gray-600 mt-2">Select a node from the sidebar to establish connection</p>
+            </div>
+
+            <!-- Chat Header -->
+            <div id="chatHeader" class="h-[72px] px-6 bg-[#121212] border-b border-[#262626] flex justify-between items-center hidden z-10">
+                <div>
+                    <h2 id="activeRoomName" class="text-base font-semibold text-gray-200">NODE</h2>
+                    <div id="presenceIndicator" class="flex items-center gap-2 opacity-0 transition-opacity mt-0.5">
+                        <span id="presenceDot" class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                        <span id="presenceText" class="text-[10px] text-gray-500 uppercase tracking-widest"></span>
+                    </div>
+                </div>
+                <!-- Admin Add Member Button -->
+                <button onclick="addMemberPrompt()" class="flex items-center gap-2 text-[11px] uppercase tracking-wider bg-[#1a1a1a] hover:bg-[#8c5226] text-[#d4a373] hover:text-white px-4 py-2 rounded-full border border-[#333] hover:border-[#8c5226] transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg> Add Member
+                </button>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesContainer" class="flex-1 p-6 overflow-y-auto flex flex-col gap-4 hidden z-10 scroll-smooth"></div>
+
+            <!-- Typing Indicator -->
+            <div id="typingArea" class="px-6 h-6 hidden z-10">
+                <p id="typingIndicator" class="text-[10px] text-gray-500 italic opacity-0 transition-opacity"></p>
+            </div>
+
+            <!-- Input Area -->
+            <div id="inputArea" class="p-4 bg-[#121212] border-t border-[#262626] hidden z-10">
+                <div class="flex gap-3 max-w-4xl mx-auto items-center">
+                    <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="sendImage(event)">
+                    <button onclick="document.getElementById('imageInput').click()" class="p-3 text-gray-400 hover:text-[#d4a373] bg-[#1a1a1a] hover:bg-[#222] rounded-xl transition-colors border border-[#333]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                    </button>
+                    <input type="text" id="msgInput" onkeypress="handleKeyPress(event)" oninput="sendTypingSignal()" placeholder="Type your encrypted message..."
+                        class="flex-1 bg-[#1a1a1a] border border-[#333] rounded-xl px-5 py-3 text-sm focus:outline-none focus:border-[#8c5226] transition-colors text-gray-200 placeholder-gray-600">
+                    <button onclick="sendMessage()" class="bg-[#8c5226] hover:bg-[#a6632f] text-white p-3 rounded-xl transition-all shadow-[0_0_10px_rgba(140,82,38,0.2)]">
+                        <svg class="w-5 h-5 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-[#1e1e1e] border border-[#333] text-gray-200 px-6 py-3 rounded-lg shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
+        <span id="toastIcon"></span>
+        <span id="toastMsg" class="text-xs uppercase tracking-wider"></span>
+    </div>
+
+    <script>
+        const API_BASE = "http://127.0.0.1:8000";
+        let isLoginMode = true;
+        let currentUser = localStorage.getItem('nexus_user') || "";
+        let currentToken = localStorage.getItem('nexus_token') || "";
+        let activeRoom = null;
+        let ws = null;
+        let typingTimeout;
+        let savedRooms = JSON.parse(localStorage.getItem('nexus_rooms')) || []; // Store rooms locally for UI
+
+        // Initialize App
+        if (currentToken && currentUser) {
+            setupAppUI();
+        }
+
+        // ================= AUTHENTICATION FLOW =================
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('authSubtitle').innerText = isLoginMode ? "Authenticate Session" : "Establish Identity";
+            document.getElementById('authBtn').innerText = isLoginMode ? "Access Terminal" : "Create Account";
+            document.getElementById('authToggleText').innerText = isLoginMode ? "No clearance?" : "Already have clearance?";
+            document.getElementById('authToggleLink').innerText = isLoginMode ? "Request Access" : "Login Here";
+            document.getElementById('authError').classList.add('hidden');
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            const userIn = document.getElementById('username').value;
+            const passIn = document.getElementById('password').value;
+            const errEl = document.getElementById('authError');
+            errEl.classList.add('hidden');
+
+            try {
+                if (isLoginMode) {
+                    // LOGIN API
+                    const formData = new URLSearchParams();
+                    formData.append('username', userIn);
+                    formData.append('password', passIn);
+                    const res = await fetch(`${API_BASE}/auth/login`, { method: 'POST', body: formData });
+                    
+                    if (res.ok) {
+                        const data = await res.json();
+                        currentToken = data.access_token;
+                        currentUser = userIn;
+                        localStorage.setItem('nexus_token', currentToken);
+                        localStorage.setItem('nexus_user', currentUser);
+                        setupAppUI();
+                    } else {
+                        errEl.innerText = "Access Denied: Invalid credentials.";
+                        errEl.classList.remove('hidden');
+                    }
+                } else {
+                    // SIGNUP API
+                    const res = await fetch(`${API_BASE}/auth/signup`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: userIn, password: passIn })
+                    });
+                    
+                    if (res.ok) {
+                        showToast("Account Created. Logging in...", "✅");
+                        isLoginMode = true; // Switch to login and automatically log them in
+                        handleAuth(e); 
+                    } else {
+                        errEl.innerText = "Error: User may already exist.";
+                        errEl.classList.remove('hidden');
+                    }
+                }
+            } catch (error) {
+                errEl.innerText = "Critical Server Error. Connection lost.";
+                errEl.classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            if(ws) ws.close();
+            localStorage.removeItem('nexus_token');
+            localStorage.removeItem('nexus_user');
+            window.location.reload();
+        }
+
+        // ================= UI & SIDEBAR MANAGEMENT =================
+        function setupAppUI() {
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('appScreen').classList.remove('hidden');
+            document.getElementById('profileName').innerText = currentUser;
+            document.getElementById('userInitial').innerText = currentUser.charAt(0).toUpperCase();
+            renderRoomList();
+        }
+
+        function renderRoomList() {
+            const container = document.getElementById('roomListContainer');
+            container.innerHTML = "";
+            savedRooms.forEach(room => {
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-xl cursor-pointer transition-colors border ${activeRoom === room.id ? 'bg-[#1a1a1a] border-[#8c5226]' : 'border-transparent hover:bg-[#1a1a1a]'}`;
+                div.onclick = () => openRoom(room.id, room.name);
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-[#222] flex items-center justify-center text-[#d4a373] font-bold text-xs border border-[#333]">
+                            #${room.id}
+                        </div>
+                        <div class="flex-1 overflow-hidden">
+                            <h3 class="text-sm font-semibold text-gray-200 truncate">${room.name}</h3>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">Encrypted Node</p>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // ================= ROOM ADMIN ACTIONS =================
+        async function createNewRoom() {
+            const roomName = prompt("Enter new room name:");
+            if (!roomName) return;
+
+            try {
+                // Call API: Assuming POST /create_room?name=X&username=Y based on FastAPI schema
+                const res = await fetch(`${API_BASE}/create_room?name=${encodeURIComponent(roomName)}&username=${encodeURIComponent(currentUser)}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    const newRoom = { id: data.room_id, name: roomName };
+                    savedRooms.push(newRoom);
+                    localStorage.setItem('nexus_rooms', JSON.stringify(savedRooms));
+                    showToast("Room Secured", "🔒");
+                    renderRoomList();
+                    openRoom(newRoom.id, newRoom.name);
+                } else {
+                    showToast("Failed to create room.", "❌");
+                }
+            } catch (e) {
+                showToast("Server Error.", "❌");
+            }
+        }
+
+        async function addMemberPrompt() {
+            const newMember = prompt(`Add a user to Room #${activeRoom}:`);
+            if (!newMember) return;
+
+            try {
+                // Call API: Assuming POST /add_member?room_id=X&username=Y
+                const res = await fetch(`${API_BASE}/add_member?room_id=${activeRoom}&username=${encodeURIComponent(newMember)}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                if (res.ok) {
+                    showToast(`${newMember} granted access!`, "✅");
+                } else {
+                    showToast("Failed to add member.", "❌");
+                }
+            } catch (e) {
+                showToast("Server Error.", "❌");
+            }
+        }
+
+        function joinRoomPrompt() {
+            const rId = prompt("Enter Room ID to join (You must be authorized):");
+            if (rId) openRoom(rId, `Node ${rId}`);
+        }
+
+        // ================= CHAT ARENA =================
+        function openRoom(roomId, roomName) {
+            activeRoom = roomId;
+            document.getElementById('activeRoomName').innerText = roomName.toUpperCase();
+            
+            // UI Toggles
+            document.getElementById('emptyState').classList.add('hidden');
+            ['chatHeader', 'messagesContainer', 'typingArea', 'inputArea'].forEach(id => {
+                document.getElementById(id).classList.remove('hidden');
+            });
+            
+            // Save to sidebar if not exists
+            if (!savedRooms.find(r => r.id == roomId)) {
+                savedRooms.push({id: roomId, name: roomName});
+                localStorage.setItem('nexus_rooms', JSON.stringify(savedRooms));
+            }
+            
+            renderRoomList();
+            if (ws) ws.close();
+            document.getElementById('messagesContainer').innerHTML = "";
+            initWebSocket();
+            loadChatHistory();
+        }
+
+        function initWebSocket() {
+            ws = new WebSocket(`ws://127.0.0.1:8000/ws/${activeRoom}/${currentUser}?token=${currentToken}`);
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                const typingIdc = document.getElementById('typingIndicator');
+                
+                if (data.type === "chat") {
+                    typingIdc.style.opacity = "0";
+                    appendMessage(data.msg_id, data.sender, data.message);
+                } 
+                else if (data.type === "unsend") {
+                    const msgElement = document.getElementById("msg-" + data.msg_id);
+                    if (msgElement) msgElement.remove();
+                }
+                else if (data.type === "typing" && data.sender !== currentUser) {
+                    typingIdc.innerText = `${data.sender} is typing...`;
+                    typingIdc.style.opacity = "1";
+                    clearTimeout(typingTimeout);
+                    typingTimeout = setTimeout(() => { typingIdc.style.opacity = "0"; }, 1500);
+                }
+                else if (data.type === "screenshot" && data.sender !== currentUser) {
+                    const c = document.getElementById('messagesContainer');
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = "flex justify-center mb-4 w-full animate-pulse fade-in";
+                    alertDiv.innerHTML = `<div class="bg-red-950/80 border border-red-500/50 text-red-400 px-6 py-2.5 rounded-xl text-[10px] font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(220,38,38,0.2)]">🚨 Alert: ${data.sender} captured the screen</div>`;
+                    c.appendChild(alertDiv);
+                    c.scrollTop = c.scrollHeight;
+                }
+                else if (data.type === "presence" && data.sender !== currentUser) {
+                    const pInd = document.getElementById('presenceIndicator');
+                    pInd.style.opacity = "1";
+                    document.getElementById('presenceText').innerText = `${data.sender} ${data.status === "online" ? "Active" : "Offline"}`;
+                    document.getElementById('presenceDot').className = data.status === "online" ? "w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]" : "w-1.5 h-1.5 rounded-full bg-gray-500";
+                }
+            };
+        }
+
+        // --- MESSAGE RENDERING (THE ESPRESSO THEME) ---
+        function appendMessage(msgId, sender, content) {
+            const container = document.getElementById('messagesContainer');
+            const wrapper = document.createElement('div');
+            wrapper.id = "msg-" + msgId;
+            wrapper.className = "fade-in flex flex-col " + (sender === currentUser ? "items-end" : "items-start");
+            
+            let displayHTML = content;
+            if (content.startsWith("data:image")) {
+                displayHTML = `<div class="mt-1 cursor-pointer" onclick="downloadImage('${content}')">
+                    <img src="${content}" class="max-w-[220px] rounded-lg border border-black/20 shadow-md">
+                    </div>`;
+            }
+
+            if (sender === currentUser) {
+                wrapper.ondblclick = () => unsendMessage(msgId);
+                wrapper.innerHTML = `
+                    <div class="group relative max-w-[75%]">
+                        <span class="absolute -top-4 right-1 text-[9px] text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity uppercase">Dbl-click unsend</span>
+                        <div class="bg-gradient-to-br from-[#8c5226] to-[#6b3e1c] text-white px-5 py-3 rounded-2xl rounded-tr-sm text-sm shadow-md border border-[#9e5d2c]/50 break-words leading-relaxed">
+                            ${displayHTML}
+                        </div>
+                    </div>`;
+            } else {
+                wrapper.innerHTML = `
+                    <div class="max-w-[75%]">
+                        <span class="text-[10px] text-gray-500 mb-1 ml-2 uppercase tracking-wider block">${sender}</span>
+                        <div class="bg-[#1f1f1f] text-gray-200 px-5 py-3 rounded-2xl rounded-tl-sm text-sm shadow-md border border-[#333] break-words leading-relaxed">
+                            ${displayHTML}
+                        </div>
+                    </div>`;
+            }
+            container.appendChild(wrapper);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function loadChatHistory() {
+            try {
+                const res = await fetch(`${API_BASE}/room/${activeRoom}/messages`, {
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                
+                if (res.status === 403) {
+                    showToast("Access Denied: You are not authorized for this node.", "🚫");
+                    document.getElementById('messagesContainer').innerHTML = `
+                        <div class="flex-1 flex flex-col items-center justify-center text-red-500/50">
+                            <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            <p class="text-sm font-semibold tracking-widest uppercase">Clearance Rejected</p>
+                        </div>`;
+                    return;
+                }
+                const data = await res.json();
+                document.getElementById('messagesContainer').innerHTML = ""; 
+                data.forEach(chat => appendMessage(chat.msg_id, chat.sender, chat.message));
+            } catch (e) {
+                console.error("History fail");
+            }
+        }
+
+        // ================= INPUT & UTILS =================
+        document.addEventListener("keyup", function(e) {
+            if (activeRoom && ws && (e.key === "PrintScreen" || e.key === "PrntScrn" || (e.metaKey && e.shiftKey))) {
+                ws.send(JSON.stringify({"type": "screenshot"}));
+            }
+        });
+
+        function handleKeyPress(e) { if (e.key === "Enter") sendMessage(); }
+        function sendTypingSignal() { if (ws && ws.readyState === 1) ws.send(JSON.stringify({"type": "typing"})); }
+
+        function sendMessage() {
+            const input = document.getElementById("msgInput");
+            if (input.value.trim() !== "") {
+                ws.send(JSON.stringify({"type": "chat", "message": input.value}));
+                input.value = "";
+            }
+        }
+
+        function unsendMessage(msgId) {
+            if (confirm("Permanently redact this data?")) {
+                ws.send(JSON.stringify({ "type": "unsend", "msg_id": msgId }));
+            }
+        }
+
+        function sendImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => ws.send(JSON.stringify({"type": "chat", "message": e.target.result}));
+            reader.readAsDataURL(file);
+            event.target.value = "";
+        }
+
+        function downloadImage(base64Str) {
+            const a = document.createElement("a");
+            a.href = base64Str;
+            a.download = "nexus_secure_media.png";
+            a.click();
+        }
+
+        function showToast(msg, icon) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            document.getElementById('toastIcon').innerText = icon;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, 3000);
+        }
+    </script>
+</body>
+</html>

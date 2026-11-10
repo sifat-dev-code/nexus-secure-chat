@@ -1,0 +1,15 @@
+# Python caches
+__pycache__/
+*.pyc
+
+# Database (NEVER push production/local data to GitHub)
+*.db
+*.sqlite3
+
+# Virtual Environments
+venv/
+env/
+.venv/
+
+# Environment Variables (Secrets)
+.env
