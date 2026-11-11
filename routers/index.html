@@ -151,7 +151,7 @@
     </div>
 
     <script>
-        const API_BASE = "http://127.0.0.1:8000";
+        const API_BASE = "https://nexus-secure-chat-rieb.onrender.com";
         let isLoginMode = true;
         let currentUser = localStorage.getItem('nexus_user') || "";
         let currentToken = localStorage.getItem('nexus_token') || "";
@@ -340,7 +340,7 @@
         }
 
         function initWebSocket() {
-            ws = new WebSocket(`ws://127.0.0.1:8000/ws/${activeRoom}/${currentUser}?token=${currentToken}`);
+            ws = new WebSocket(`wss://https://nexus-secure-chat-rieb.onrender.com/ws/${activeRoom}/${currentUser}?token=${currentToken}`);
             ws.onmessage = function(event) {
                 const data = JSON.parse(event.data);
                 const typingIdc = document.getElementById('typingIndicator');
